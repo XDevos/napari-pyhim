@@ -1,0 +1,28 @@
+name: napari-pyhim
+display_name: A napari-plugin to configurate the parameters for pyHiM, a software for the analysis of multiplexed DNA-FISH data.
+contributions:
+  commands:
+    - id: napari-pyhim.make_sample_data
+      python_name: napari_pyhim._sample_data:make_sample_data
+      title: Load sample data from A napari-plugin to configurate the parameters for pyHiM, a software for the analysis of multiplexed DNA-FISH data.
+    - id: napari-pyhim.make_qwidget
+      python_name: napari_pyhim._widget:ExampleQWidget
+      title: Make example QWidget
+    - id: napari-pyhim.make_magic_widget
+      python_name: napari_pyhim._widget:example_magic_widget
+      title: Make example magic widget
+    - id: napari-pyhim.make_func_widget
+      python_name: napari_pyhim._widget:example_function_widget
+      title: Make example function widget
+  sample_data:
+    - command: napari-pyhim.make_sample_data
+      display_name: A napari-plugin to configurate the parameters for pyHiM, a software for the analysis of multiplexed DNA-FISH data.
+      key: unique_id.1
+  widgets:
+    - command: napari-pyhim.make_qwidget
+      display_name: Example QWidget
+    - command: napari-pyhim.make_magic_widget
+      display_name: Example Magic Widget
+    - command: napari-pyhim.make_func_widget
+      autogenerate: true
+      display_name: Example Function Widget
