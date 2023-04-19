@@ -23,6 +23,10 @@ if TYPE_CHECKING:
     #####################################################################
 
 
+# Gaussian function
+def gaussian(x, a=1, mean=0, std=0.5):
+    return a * (1 / (std * (np.sqrt(2 * np.pi)))) * (np.exp(-((x - mean) ** 2) / ((2 * std) ** 2)))
+
 def calculate_zrange(idata, z_min, z_max, window_security, z_windows):
     """
     Calculates the focal planes based max standard deviation
