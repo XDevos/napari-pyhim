@@ -12,6 +12,7 @@ from magicgui.widgets import FunctionGui
 import numpy as np
 import scipy.optimize as spo
 from apifish.stack import projection
+from ._param import update_zproject
 
 if TYPE_CHECKING:
     import napari
@@ -25,7 +26,12 @@ if TYPE_CHECKING:
 
 # Gaussian function
 def gaussian(x, a=1, mean=0, std=0.5):
-    return a * (1 / (std * (np.sqrt(2 * np.pi)))) * (np.exp(-((x - mean) ** 2) / ((2 * std) ** 2)))
+    return (
+        a
+        * (1 / (std * (np.sqrt(2 * np.pi))))
+        * (np.exp(-((x - mean) ** 2) / ((2 * std) ** 2)))
+    )
+
 
 def calculate_zrange(idata, z_min, z_max, window_security, z_windows):
     """
@@ -97,17 +103,24 @@ def reinterpolate_focal_plane(data, block_size=128, z_windows=0):
     )
     return output, focal_plane_matrix, z_range
 
+
 def project_image_2d(img, z_range, mode):
     # sums images
     i_collapsed = None
     if "MIP" in mode:
         # Max projection of selected planes
-        i_collapsed = projection.maximum_projection(img[z_range[1][0] : z_range[1][-1]])
+        i_collapsed = projection.maximum_projection(
+            img[z_range[1][0] : z_range[1][-1]]
+        )
     elif "sum" in mode:
         # Sums selected planes
-        i_collapsed = projection.sum_projection(img[z_range[1][0] : (z_range[1][-1] + 1)])
+        i_collapsed = projection.sum_projection(
+            img[z_range[1][0] : (z_range[1][-1] + 1)]
+        )
     else:
-        print(f"ERROR: mode not recognized. Expected: MIP or sum. Read: {mode}")
+        print(
+            f"ERROR: mode not recognized. Expected: MIP or sum. Read: {mode}"
+        )
     return i_collapsed
 
     #####################################################################
@@ -132,12 +145,30 @@ def _mode_choices(wdg):
 def on_init(widget: FunctionGui):
     """called each time widget_factory creates a new widget."""
 
+    # @widget.save.changed.connect
+    # def on_save_changed(save_val: bool):
+    #     if save_val:
+    #         widget.save_path.visible = True
+    #     else:
+    #         widget.save_path.visible = False
+
     @widget.save.changed.connect
     def on_save_changed(save_val: bool):
-        if save_val:
-            widget.save_path.visible = True
-        else:
-            widget.save_path.visible = False
+        print("SAVE !")
+        new_params = update_zproject(
+            widget.mode.value,
+            widget.block_size.value,
+            widget.z_min.value,
+            widget.z_max.value,
+            widget.z_windows.value,
+            widget.window_security.value,
+            widget.z_project_option.value,
+        )
+        #data_to_print = {"operationTODO": operationTODO, "image": layer0_name}
+        json_path = str(widget.save_path.value) + "_test_to_delete.json"
+        with open(json_path, "w") as outfile:
+            json.dump(new_params, outfile)
+        print(f"Configuration save at : {json_path}")
 
     @widget.layer0.changed.connect
     def on_layer_changed(lyr: Layer):
@@ -151,18 +182,38 @@ def on_init(widget: FunctionGui):
     def on_layer_changed(lyr: Layer):
         widget.z_max.min = widget.z_min.value + 1
 
+    # @widget.auto_run.changed.connect
+    # def on_auto_changed(auto_val: bool):
+    #     widget.auto_call.value = auto_val
+    # widget.call_button = not(auto_val)
+    # print(widget.auto_call)
+    # print(widget.call_button)
+
 
 @magic_factory(
     widget_init=on_init,
     mode={"choices": _mode_choices},
-    call_button="Project",
+    # call_button="Project",
+    auto_call=True,
+    # save={
+    #     "widget_type": "CheckBox",
+    #     "value": False,
+    #     "name": "save",
+    #     "text": "Save configuration",
+    # },
     save={
-        "widget_type": "CheckBox",
+        "widget_type": "PushButton",
         "value": False,
         "name": "save",
         "text": "Save configuration",
     },
-    save_path={"mode": "d", "visible": False},
+    # auto_run={
+    #     "widget_type": "CheckBox",
+    #     "value": False,
+    #     "name": "auto_run",
+    #     "text": "Auto update",
+    # },
+    save_path={"mode": "d", "visible": True},
     z_project_option={"choices": ["sum", "MIP"]},
     block_size={"choices": [32, 64, 128, 256, 512, 1024], "value": 256},
     z_min={"widget_type": "Slider", "min": 0, "max": 0, "value": 0},
@@ -177,8 +228,9 @@ def do_projection(
     z_windows: int,
     window_security: int,
     z_project_option: str,
-    save: bool,
     save_path: pathlib.Path,
+    save: bool,
+    # auto_run: bool,
 ) -> LayerDataTuple:
 
     # Store source images in metadata
